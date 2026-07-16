@@ -53,6 +53,8 @@ public class SecurityConfig {
                         ).permitAll()
                         // Registro genérico requiere ADMIN
                         .requestMatchers("/auth/register", "/api/v1/auth/register").hasRole("ADMIN")
+                        // Endpoints de usuario propios (push token, intereses, etc.)
+                        .requestMatchers("/users/me/**", "/api/v1/users/me/**").authenticated()
                         // Solo ADMIN puede gestionar usuarios y roles
                         .requestMatchers("/users/**", "/api/v1/users/**").hasRole("ADMIN")
                         .requestMatchers("/roles/**", "/api/v1/roles/**").hasRole("ADMIN")

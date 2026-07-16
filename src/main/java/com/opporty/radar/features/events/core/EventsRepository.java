@@ -21,4 +21,7 @@ public interface EventsRepository extends JpaRepository<Events, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Events e WHERE e.id = :id")
     Optional<Events> findByIdWithLock(@Param("id") Long id);
+
+    @Query("SELECT e FROM Events e WHERE e.fechaInicio = :date AND e.estado IN :estados")
+    List<Events> findByFechaInicioAndEstadoIn(@Param("date") java.time.LocalDate date, @Param("estados") List<Estado> estados);
 }

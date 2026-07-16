@@ -20,6 +20,7 @@ import com.opporty.radar.features.events.tags.TagsRepository;
 
 @SpringBootApplication
 @EnableScheduling
+@org.springframework.scheduling.annotation.EnableAsync
 public class RadarApplication {
 
 	public static void main(String[] args) {

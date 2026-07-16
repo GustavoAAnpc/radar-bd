@@ -18,6 +18,7 @@ public class EventRegistrationsService {
     private final EventRegistrationsRepository eventRegistrationsRepository;
     private final EventsRepository eventsRepository;
     private final EventRegistrationsMapper eventRegistrationsMapper;
+    private final com.opporty.radar.features.notifications.NotificationsService notificationsService;
 
     @Transactional(readOnly = true)
     public List<EventRegistrationsViewDTO> getRegistrationsByUser(Users user) {
@@ -115,6 +116,22 @@ public class EventRegistrationsService {
         }
 
         EventRegistrations updated = eventRegistrationsRepository.save(registration);
+
+        // Notificar al usuario si su inscripción fue aprobada o rechazada
+        if (status == AttendanceStatus.REGISTERED) {
+            notificationsService.createNotification(
+                    updated.getUser(),
+                    "✅ Inscripción Aprobada",
+                    "Tu inscripción al evento '" + updated.getEvent().getTitulo() + "' ha sido aprobada.",
+                    updated.getEvent().getId());
+        } else if (status == AttendanceStatus.REJECTED) {
+            notificationsService.createNotification(
+                    updated.getUser(),
+                    "❌ Inscripción Rechazada",
+                    "Tu inscripción al evento '" + updated.getEvent().getTitulo() + "' ha sido rechazada.",
+                    updated.getEvent().getId());
+        }
+
         return eventRegistrationsMapper.toDt(updated);
     }
 
@@ -131,6 +148,14 @@ public class EventRegistrationsService {
         registration.setCertificateUrl("https://radar.opporty.com/certificates/" + registration.getId());
 
         EventRegistrations updated = eventRegistrationsRepository.save(registration);
+
+        // Notificar al usuario que su certificado está listo
+        notificationsService.createNotification(
+                updated.getUser(),
+                "🎓 Certificado Disponible",
+                "Tu certificado para el evento '" + updated.getEvent().getTitulo() + "' ya está disponible.",
+                updated.getEvent().getId());
+
         return eventRegistrationsMapper.toDt(updated);
     }
 }

@@ -80,4 +80,19 @@ public class UsersRestController {
         }
         return ResponseEntity.ok(usersService.updateUserInterests(currentUser, request.categoryIds()));
     }
+
+    public record PushTokenRequest(
+            @NotBlank(message = "El token no puede estar vacío") String token
+    ) {}
+
+    @PutMapping("me/push-token")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updatePushToken(@Valid @RequestBody PushTokenRequest request) {
+        Users currentUser = SecurityUtils.getCurrentUser();
+        if (currentUser == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado");
+        }
+        usersService.savePushToken(currentUser, request.token());
+        return ResponseEntity.ok().build();
+    }
 }

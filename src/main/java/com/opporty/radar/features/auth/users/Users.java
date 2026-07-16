@@ -56,4 +56,7 @@ public class Users {
 
     @Column(name = "profile_picture_url", length = 500)
     private String profilePictureUrl;
+
+    @Column(name = "expo_push_token", length = 200)
+    private String expoPushToken;
 }

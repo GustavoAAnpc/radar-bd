@@ -101,6 +101,11 @@ public class EventsService {
             );
         }
 
+        // Notificar a usuarios interesados si el evento se publica directamente (ADMIN/TEACHER)
+        if (savedEvent.getEstado() == Estado.PUBLISHED || savedEvent.getEstado() == Estado.SCHEDULED) {
+            notificationsService.notifyInterestedUsers(savedEvent);
+        }
+
         return eventsMapper.toDt(savedEvent);
     }
 
@@ -206,6 +211,11 @@ public class EventsService {
             String title = "PUBLISHED".equals(newState) ? "Evento Aprobado 🎉" : "Evento Rechazado ❌";
             String msg = "Tu evento '" + updatedEvent.getTitulo() + "' ha sido " + ("PUBLISHED".equals(newState) ? "aprobado." : "rechazado.");
             notificationsService.createNotification(updatedEvent.getCreatedBy(), title, msg, updatedEvent.getId());
+
+            // Si fue aprobado, notificar a usuarios interesados
+            if ("PUBLISHED".equals(newState)) {
+                notificationsService.notifyInterestedUsers(updatedEvent);
+            }
         }
 
         if (oldState != Estado.PENDING && "PENDING".equals(newState)) {
@@ -214,6 +224,18 @@ public class EventsService {
                     "El manager @" + currentUser.getUsername() + " ha reenviado el evento '" + updatedEvent.getTitulo() + "' para su revisión.",
                     updatedEvent.getId()
             );
+        }
+
+        // Notificar inscritos si el evento fue cancelado o suspendido
+        if (state == Estado.CANCELLED && oldState != Estado.CANCELLED) {
+            notificationsService.notifyEventAttendees(updatedEvent,
+                    "❌ Evento Cancelado",
+                    "El evento '" + updatedEvent.getTitulo() + "' ha sido cancelado.");
+        }
+        if (state == Estado.SUSPENDED && oldState != Estado.SUSPENDED) {
+            notificationsService.notifyEventAttendees(updatedEvent,
+                    "⚠️ Evento Suspendido",
+                    "El evento '" + updatedEvent.getTitulo() + "' ha sido suspendido temporalmente.");
         }
 
         return eventsMapper.toDt(updatedEvent);

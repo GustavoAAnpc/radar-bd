@@ -110,4 +110,13 @@ public class UsersService {
                 .map(eventCategoriesMapper::toDt)
                 .toList();
     }
+
+    @Transactional
+    public void savePushToken(Users user, String token) {
+        Users persistedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        persistedUser.setExpoPushToken(token);
+        userRepository.save(persistedUser);
+    }
 }

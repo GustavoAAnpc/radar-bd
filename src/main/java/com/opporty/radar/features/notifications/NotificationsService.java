@@ -1,7 +1,15 @@
 package com.opporty.radar.features.notifications;
 
 import com.opporty.radar.features.auth.users.Users;
+import com.opporty.radar.features.auth.users.UsersRepository;
+import com.opporty.radar.features.events.core.Events;
+import com.opporty.radar.features.events.categories.EventCategories;
+import com.opporty.radar.features.events.registrations.EventRegistrations;
+import com.opporty.radar.features.events.registrations.EventRegistrationsRepository;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,7 +23,9 @@ public class NotificationsService {
 
     private final NotificationsRepository notificationsRepository;
     private final NotificationsMapper notificationsMapper;
-    private final com.opporty.radar.features.auth.users.UsersRepository usersRepository;
+    private final UsersRepository usersRepository;
+    private final ExpoPushService expoPushService;
+    private final EventRegistrationsRepository eventRegistrationsRepository;
 
     @Transactional(readOnly = true)
     public List<NotificationsViewDTO> getUserNotifications(Users user) {
@@ -53,6 +63,11 @@ public class NotificationsService {
         notificationsRepository.saveAll(unread);
     }
 
+    /**
+     * Crea una notificación interna en la BD Y envía push al dispositivo del usuario.
+     * Este es el punto central: todos los flujos del sistema pasan por aquí,
+     * así que al agregar push aquí, TODOS los escenarios existentes heredan push automáticamente.
+     */
     @Transactional
     public void createNotification(Users user, String title, String message, Long eventId) {
         Notifications notification = Notifications.builder()
@@ -63,6 +78,14 @@ public class NotificationsService {
                 .eventId(eventId)
                 .build();
         notificationsRepository.save(notification);
+
+        // Enviar push notification al dispositivo
+        Map<String, Object> data = new HashMap<>();
+        if (eventId != null) {
+            data.put("eventId", eventId);
+            data.put("screen", "event-detail");
+        }
+        expoPushService.sendPush(user.getExpoPushToken(), title, message, data);
     }
 
     @Transactional
@@ -70,6 +93,43 @@ public class NotificationsService {
         List<Users> admins = usersRepository.findByRoleName("ADMIN");
         for (Users admin : admins) {
             createNotification(admin, title, message, eventId);
+        }
+    }
+
+    /**
+     * Notifica a todos los usuarios inscritos activos de un evento.
+     * Usado para: cancelación, suspensión, recordatorios, etc.
+     */
+    @Transactional
+    public void notifyEventAttendees(Events event, String title, String message) {
+        List<EventRegistrations> registrations = eventRegistrationsRepository.findActiveRegistrationsWithUsers(event);
+        for (EventRegistrations reg : registrations) {
+            createNotification(reg.getUser(), title, message, event.getId());
+        }
+    }
+
+    /**
+     * Notifica a usuarios cuyas preferencias (interests) coincidan con las categorías del evento.
+     * Excluye al creador del evento para no auto-notificarse.
+     */
+    @Transactional
+    public void notifyInterestedUsers(Events event) {
+        Set<EventCategories> eventCategories = event.getCategories();
+        if (eventCategories == null || eventCategories.isEmpty()) {
+            return;
+        }
+
+        List<Users> interestedUsers = usersRepository.findByInterestsInAndExpoPushTokenNotNull(eventCategories);
+
+        String title = "🔔 Nuevo evento de tu interés";
+        String message = "Se ha publicado '" + event.getTitulo() + "'. ¡Podría interesarte!";
+
+        for (Users user : interestedUsers) {
+            // No notificar al creador del evento
+            if (event.getCreatedBy() != null && event.getCreatedBy().getId().equals(user.getId())) {
+                continue;
+            }
+            createNotification(user, title, message, event.getId());
         }
     }
 }
