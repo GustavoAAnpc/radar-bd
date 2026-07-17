@@ -207,13 +207,14 @@ public class EventsService {
         String newState = state.toString();
         Events updatedEvent = eventsRepository.save(event);
 
-        if (oldState == Estado.PENDING && ("PUBLISHED".equals(newState) || "REJECTED".equals(newState))) {
-            String title = "PUBLISHED".equals(newState) ? "Evento Aprobado 🎉" : "Evento Rechazado ❌";
-            String msg = "Tu evento '" + updatedEvent.getTitulo() + "' ha sido " + ("PUBLISHED".equals(newState) ? "aprobado." : "rechazado.");
+        if (oldState == Estado.PENDING && ("PUBLISHED".equals(newState) || "SCHEDULED".equals(newState) || "FINISHED".equals(newState) || "REJECTED".equals(newState))) {
+            boolean isApproved = !"REJECTED".equals(newState);
+            String title = isApproved ? "Evento Aprobado 🎉" : "Evento Rechazado ❌";
+            String msg = "Tu evento '" + updatedEvent.getTitulo() + "' ha sido " + (isApproved ? "aprobado." : "rechazado.");
             notificationsService.createNotification(updatedEvent.getCreatedBy(), title, msg, updatedEvent.getId());
 
-            // Si fue aprobado, notificar a usuarios interesados
-            if ("PUBLISHED".equals(newState)) {
+            // Si fue aprobado y está publicado o programado, notificar a usuarios interesados
+            if (isApproved && ("PUBLISHED".equals(newState) || "SCHEDULED".equals(newState))) {
                 notificationsService.notifyInterestedUsers(updatedEvent);
             }
         }
