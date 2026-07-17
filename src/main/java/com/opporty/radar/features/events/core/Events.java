@@ -157,5 +157,13 @@ public class Events {
 
     @Column(name = "grabacion_url", length = 500)
     private String grabacionUrl;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<com.opporty.radar.features.events.qr.EventQrSessions> qrSessions = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<com.opporty.radar.features.events.registrations.EventRegistrations> registrations = new ArrayList<>();
 }
 
