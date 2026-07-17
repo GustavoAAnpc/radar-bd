@@ -44,7 +44,7 @@ public class EventRegistrationsRestController {
     }
 
     @GetMapping("/event/{eventId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'MANAGER')")
     public ResponseEntity<List<EventRegistrationsViewDTO>> getByEvent(@PathVariable Long eventId) {
         List<EventRegistrationsViewDTO> list = eventRegistrationsService.getRegistrationsByEvent(eventId);
         if (list.isEmpty()) {
