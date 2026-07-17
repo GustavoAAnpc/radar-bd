@@ -91,7 +91,8 @@ public class EventQrSessionsService {
         String qrImageBase64 = generateQrCodeBase64(token);
 
         EventQrSessionsViewDTO viewDto = eventQrSessionsMapper.toDt(savedSession);
-        return new QrSessionResponse(viewDto, qrImageBase64);
+        long remainingSeconds = java.time.Duration.between(LocalDateTime.now(), expiresAt).getSeconds();
+        return new QrSessionResponse(viewDto, qrImageBase64, remainingSeconds);
     }
 
     @Transactional
@@ -220,7 +221,8 @@ public class EventQrSessionsService {
 
         String qrImageBase64 = generateQrCodeBase64(session.getToken());
         EventQrSessionsViewDTO viewDto = eventQrSessionsMapper.toDt(session);
-        return new QrSessionResponse(viewDto, qrImageBase64);
+        long remainingSeconds = java.time.Duration.between(LocalDateTime.now(), session.getExpiresAt()).getSeconds();
+        return new QrSessionResponse(viewDto, qrImageBase64, remainingSeconds);
     }
 
     private String generateQrCodeBase64(String token) {

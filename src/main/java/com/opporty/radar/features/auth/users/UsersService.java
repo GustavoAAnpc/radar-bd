@@ -113,6 +113,15 @@ public class UsersService {
 
     @Transactional
     public void savePushToken(Users user, String token) {
+        // Clear token from any other users first to prevent wrong notifications
+        List<Users> usersWithToken = userRepository.findByExpoPushToken(token);
+        for (Users u : usersWithToken) {
+            if (!u.getId().equals(user.getId())) {
+                u.setExpoPushToken(null);
+                userRepository.save(u);
+            }
+        }
+
         Users persistedUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Usuario no encontrado"));

@@ -21,4 +21,6 @@ public interface UsersRepository extends JpaRepository<Users, Long> {
 
     @Query("SELECT DISTINCT u FROM Users u JOIN u.interests c WHERE c IN :categories AND u.expoPushToken IS NOT NULL")
     List<Users> findByInterestsInAndExpoPushTokenNotNull(@Param("categories") Set<EventCategories> categories);
+
+    List<Users> findByExpoPushToken(String expoPushToken);
 }
